@@ -1,11 +1,52 @@
-fun part1() {
+import kotlin.math.abs
 
+data class Coordinates (val x: Int, val y: Int) {
+    override fun toString() = "($x,$y)"
 }
-fun part2() {
+data class Line (val start: Coordinates, val end: Coordinates) {
+    fun transform (): Line {
+        return when {
+            start.x < end.x -> this
+            start.x == end.x && start.y < end.y -> this
+            else -> Line(end, start)
+        }
+    }
+}
 
+fun verifyHowManyTwoLinesOverlap (lines: List<Line>): Int {
+    val listCoordinates = mutableMapOf<String, Int>()
+    for (line in lines) {
+        if (line.start.x == line.end.x) {
+            (line.start.y..line.end.y).map {
+                val key = Coordinates(line.start.x, it).toString()
+                listCoordinates.put(key, (listCoordinates[key] ?: 0 ) + 1)
+            }
+        } else if (line.start.y == line.end.y) {
+            (line.start.x..line.end.x).map {
+                val key = Coordinates(it, line.start.y).toString()
+                listCoordinates.put(key, (listCoordinates[key] ?: 0 ) + 1)
+            }
+        } else {
+            val dx = line.end.x - line.start.x
+            val dy = line.end.y - line.start.y
+            val direction = if (dy == 0) 0 else dy / abs(dy)
+            (0..dx).map { delta ->
+                val key = Coordinates(line.start.x + delta, line.start.y + direction * delta).toString()
+                listCoordinates.put(key, (listCoordinates[key] ?: 0) + 1)
+            }
+        }
+    }
+    return listCoordinates.filter { it.value > 1 }.size
 }
-data class Coordinates (val x: Int, val y: Int)
-data class Line (val start: Coordinates, val end: Coordinates)
+
+fun part1 (lines: List<Line>) {
+    val verticalOrHorizontalLines = lines
+        .filter { it.start.x == it.end.x || it.start.y == it.end.y }
+    println("part1: ${verifyHowManyTwoLinesOverlap(verticalOrHorizontalLines)}")
+}
+fun part2 (lines: List<Line>) {
+    println("part1: ${verifyHowManyTwoLinesOverlap(lines)}")
+}
 
 fun main () {
     val input = readInput("Day05")
@@ -13,50 +54,8 @@ fun main () {
         val (start, end) = it.split("->")
         val (x1, y1) = start.trim().split(',')
         val (x2, y2) = end.trim().split(',')
-        Line(Coordinates(x1.toInt(), y1.toInt()), Coordinates(x2.toInt(), y2.toInt()))
+        Line(Coordinates(x1.toInt(), y1.toInt()), Coordinates(x2.toInt(), y2.toInt())).transform()
     }
-
-    val verticalOrHorizontalLines = lines
-        .filter { it.start.x == it.end.x || it.start.y == it.end.y }
-    val maxX = verticalOrHorizontalLines
-        .map { listOf(it.start.x, it.end.x) }
-        .flatten()
-        .maxOf { it }
-    val maxY = verticalOrHorizontalLines
-        .map { listOf(it.start.y, it.end.y) }
-        .flatten()
-        .maxOf { it }
-    val matrix2D = List<MutableList<Int>>(maxX + 1) { MutableList(maxY + 1) { 0 } }
-
-    fun drawLine (line: Line) {
-        // vertical line
-        val dx = line.start.x - line.end.x
-        val dy = line.start.y - line.end.y
-        val rangeX = when {
-            dx > 0 -> line.end.x..line.start.x
-            dx < 0 -> line.start.x..line.end.x
-            else -> 0..0
-        }
-        val rangeY = when {
-            dy > 0 -> line.end.y..line.start.y
-            dy < 0 -> line.start.y..line.end.y
-            else -> 0..0
-        }
-
-        if (line.start.x == line.end.x) {
-            for (i in rangeY) {
-                matrix2D[line.start.x][i] += 1
-            }
-        }
-        if (line.start.y == line.end.y) {
-            for (i in rangeX) {
-                matrix2D[i][line.start.y] += 1
-            }
-        }
-    }
-    for (line in verticalOrHorizontalLines) {
-        drawLine(line)
-    }
-
-    println(matrix2D.flatten().filter { it > 1 }.size)
+    part1(lines)
+    part2(lines)
 }

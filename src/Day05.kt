@@ -4,6 +4,12 @@ data class Coordinates (val x: Int, val y: Int) {
     override fun toString() = "($x,$y)"
 }
 data class Line (val start: Coordinates, val end: Coordinates) {
+    val type = when {
+        start.x == end.x -> "vertical"
+        start.y == end.y -> "horizontal"
+        else -> "diagonal"
+    }
+
     fun transform (): Line {
         return when {
             start.x < end.x -> this
@@ -16,23 +22,27 @@ data class Line (val start: Coordinates, val end: Coordinates) {
 fun verifyHowManyTwoLinesOverlap (lines: List<Line>): Int {
     val listCoordinates = mutableMapOf<String, Int>()
     for (line in lines) {
-        if (line.start.x == line.end.x) {
-            (line.start.y..line.end.y).map {
-                val key = Coordinates(line.start.x, it).toString()
-                listCoordinates.put(key, (listCoordinates[key] ?: 0 ) + 1)
+        when (line.type) {
+            "vertical" -> {
+                (line.start.y..line.end.y).map {
+                    val key = Coordinates(line.start.x, it).toString()
+                    listCoordinates.put(key, (listCoordinates[key] ?: 0 ) + 1)
+                }
             }
-        } else if (line.start.y == line.end.y) {
-            (line.start.x..line.end.x).map {
-                val key = Coordinates(it, line.start.y).toString()
-                listCoordinates.put(key, (listCoordinates[key] ?: 0 ) + 1)
+            "horizontal" -> {
+                (line.start.x..line.end.x).map {
+                    val key = Coordinates(it, line.start.y).toString()
+                    listCoordinates.put(key, (listCoordinates[key] ?: 0 ) + 1)
+                }
             }
-        } else {
-            val dx = line.end.x - line.start.x
-            val dy = line.end.y - line.start.y
-            val direction = if (dy == 0) 0 else dy / abs(dy)
-            (0..dx).map { delta ->
-                val key = Coordinates(line.start.x + delta, line.start.y + direction * delta).toString()
-                listCoordinates.put(key, (listCoordinates[key] ?: 0) + 1)
+            else -> {
+                val dx = line.end.x - line.start.x
+                val dy = line.end.y - line.start.y
+                val direction = if (dy == 0) 0 else dy / abs(dy)
+                (0..dx).map { delta ->
+                    val key = Coordinates(line.start.x + delta, line.start.y + direction * delta).toString()
+                    listCoordinates.put(key, (listCoordinates[key] ?: 0) + 1)
+                }
             }
         }
     }
